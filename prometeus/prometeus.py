@@ -2,7 +2,8 @@ from prometeus.connect import get_access_token
 from requests import get
 from datetime import datetime
 from datetime import timedelta
-from urllib.parse import urlencode, quote
+from urllib.parse import urlencode
+from utils.formats import to_iso_8601
 
 
 class CopernicusAPI:
@@ -37,22 +38,17 @@ class CopernicusAPI:
 
         params = {
             "platform": platform,
-            "maxRecords": max_records
+            "maxRecords": max_records,
+            "cloudCover": f"[0,{cloud_cover}]",
+            "startDate": to_iso_8601(start_date),
+            "completionDate": to_iso_8601(end_date)
         }
 
-        if end_date:
-            end_date_dt = datetime.strptime(end_date, "%Y-%m-%d")
-            params["completionDate"] = end_date_dt.strftime("%Y-%m-%d")
 
-            if not start_date:
-                start_date = (end_date_dt - timedelta(days=5)).strftime("%Y-%m-%d")
-
-        if start_date:
-            params["startDate"] = start_date
-
-        #self.catalog_url = f"{self.catalog_url}/{mission_id}/search.json?cloudCover=[0,{cloud_cover}]&{urlencode(params, safe='[]')}"
+        self.catalog_url = f"{self.catalog_url}/{mission_id}/search.json?"
+        self.catalog_url = f"{self.catalog_url}{urlencode(params, safe=':')}"
         #print(self.catalog_url)
-        self.catalog_url = f"{self.catalog_url}/{mission_id}/search.json?startDate={start_date}&completionDate={end_date}&platform=S2C&maxRecords={max_records}"
+        #self.catalog_url = f"{self.catalog_url}/{mission_id}/search.json?startDate={start_date}&completionDate={end_date}&platform=S2C&maxRecords={max_records}&cloudCover=[0,{cloud_cover}]"
         print(self.catalog_url)
-        response = get(self.catalog_url).json()
+        response = get(self.catalog_url)
         return response
